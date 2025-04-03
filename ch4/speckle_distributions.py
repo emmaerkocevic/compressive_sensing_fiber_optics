@@ -5,12 +5,12 @@ from scipy.stats import expon, uniform, triang, norm
 from scipy.interpolate import interp1d
 
 plt.rcParams.update({
-    'axes.labelsize': 12,  # Axis labels
-    'axes.titlesize': 14,  # Title
-    'xtick.labelsize': 12,  # X-axis tick labels
-    'ytick.labelsize': 12,  # Y-axis tick labels
-    'legend.fontsize': 12,  # Legend
-    'font.size': 12  # General font size
+    'axes.labelsize': 12,  
+    'axes.titlesize': 14, 
+    'xtick.labelsize': 12, 
+    'ytick.labelsize': 12,
+    'legend.fontsize': 12,  
+    'font.size': 12 
 })
 
 # covariance matrix
@@ -66,7 +66,6 @@ distributions = {
 
 # compute empirical covariance matrices
 sample_covariances = {name: np.corrcoef(data, rowvar=False) for name, data in distributions.items()}
-# sample_covariances_masked = [np.where(sample_cov >= 1/(3*np.e), sample_cov, 0) for sample_cov in sample_covariances]
 
 # Apply mask to sample covariances
 mask_threshold = 1 / (5 * np.e)
