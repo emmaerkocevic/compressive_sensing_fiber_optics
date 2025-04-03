@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import pyMMF
 import scipy.optimize as opt
 
-
 # simulates fiber speckle
 def speckle_field(number_of_modes, mode_profiles, npoints, square_pixels):
     E_out = np.zeros((npoints, npoints, number_of_modes), dtype=complex)
@@ -23,7 +22,6 @@ def speckle_field(number_of_modes, mode_profiles, npoints, square_pixels):
     
     return intensity, intensity_cropped
 
-
 # sample correlation matrix
 def sample_corr(n_realizations, number_of_modes, mode_profiles, npoints, square_pixels):
     intensity_flat = np.zeros((n_realizations, square_pixels * square_pixels))
@@ -32,7 +30,6 @@ def sample_corr(n_realizations, number_of_modes, mode_profiles, npoints, square_
         intensity_flat[i] = intensity_cropped.flatten()
     corr_mat = np.corrcoef(intensity_flat, rowvar=False)
     return corr_mat
-
 
 # model covariance matrix
 def cov_2d(n, L):
@@ -44,7 +41,6 @@ def cov_2d(n, L):
     dist_sq = np.sum(diff ** 2, axis=-1)  # squared Euclidean distances
     cov = np.exp(-dist_sq / (L ** 2))
     return cov
-
 
 # finds L for which cov_2d best resembles sample_corr
 def optimal_L(n, corr_mat):
@@ -66,7 +62,6 @@ def optimal_L(n, corr_mat):
     difference = np.linalg.norm(corr_mat - cov_2d(n, optimal_L_cts), 'fro') / np.linalg.norm(corr_mat, 'fro')
 
     return optimal_L, difference
-
 
 # fiber parameters
 radius = 20  # core radius
