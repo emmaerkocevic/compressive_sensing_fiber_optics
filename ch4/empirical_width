@@ -1,0 +1,65 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+def cov_2d(n, L):
+    x = np.arange(n)
+    y = np.arange(n)
+    xx, yy = np.meshgrid(x, y)
+    coords = np.column_stack((xx.ravel(), yy.ravel()))
+    diff = coords[:, None, :] - coords[None, :, :]
+    dist_sq = np.sum(diff ** 2, axis=-1)
+    cov = np.exp(-dist_sq / (L ** 2))
+    return cov
+
+
+def rademacher(size):
+    return np.random.choice([-1, 1], size=size)
+
+
+def compute_supremum(m, n, s, num_trials=100, distribution='bernoulli', use_cov_sqrt=False):
+    suprema = []
+    L = np.sqrt(2)
+    cov = cov_2d(n, L)
+    cov_stable = cov + np.eye(n * n) * 0.0001
+    cov_sqrt = np.linalg.cholesky(cov_stable)
+
+    for _ in range(num_trials):
+        if distribution == 'exponential':
+            A = np.random.exponential(scale=2.0, size=(m, n * n))
+        else:
+            A = np.random.binomial(1, 0.5, size=(m, n * n))
+
+        if use_cov_sqrt:
+            A = A @ cov_sqrt
+
+        epsilon = rademacher(m)[:, np.newaxis]
+        Z = (1 / np.sqrt(m)) * np.sum(epsilon * A, axis=0)
+
+        top_s_indices = np.argsort(np.abs(Z))[-s:]
+        u_opt = np.zeros(n * n)
+        u_opt[top_s_indices] = np.sign(Z[top_s_indices])
+        suprema.append(np.dot(Z, u_opt))
+
+    return np.mean(suprema)
+
+
+m, n = 50, 10
+s_values = range(1, 100)
+
+suprema_exp = [compute_supremum(m, n, s, distribution='exponential', use_cov_sqrt=False) for s in s_values]
+suprema_exp_cov = [compute_supremum(m, n, s, distribution='exponential', use_cov_sqrt=True) for s in s_values]
+suprema_ber = [compute_supremum(m, n, s, distribution='bernoulli', use_cov_sqrt=False) for s in s_values]
+suprema_ber_cov = [compute_supremum(m, n, s, distribution='bernoulli', use_cov_sqrt=True) for s in s_values]
+
+plt.figure(figsize=(8, 5))
+plt.plot(s_values, suprema_exp, marker='o', linestyle='-', label='Exp(1) without cov_sqrt')
+plt.plot(s_values, suprema_exp_cov, marker='s', linestyle='-', label='Exp(1) with cov_sqrt')
+plt.plot(s_values, suprema_ber, marker='^', linestyle='--', label='Ber(1/2) without cov_sqrt')
+plt.plot(s_values, suprema_ber_cov, marker='d', linestyle='--', label='Ber(1/2) with cov_sqrt')
+
+plt.xlabel("s (Sparsity Level)")
+plt.ylabel("Expected Supremum Value")
+plt.title("Expected Supremum vs Sparsity Level")
+plt.legend()
+plt.show()
