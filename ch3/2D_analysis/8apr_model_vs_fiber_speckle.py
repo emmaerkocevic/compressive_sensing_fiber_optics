@@ -96,7 +96,7 @@ model_cov = model_covariance(square_pixels, L_opt)
 
 # calculate the difference between the model and sample correlations for each pixel
 # difference = np.linalg.norm(model_cov - sample_corr, axis=1) / np.linalg.norm(model_cov, axis=1)
-difference = np.linalg.norm(model_cov - sample_corr, axis=1)
+difference = np.linalg.norm(model_cov - sample_corr, axis=1) / square_pixels
 difference_2d = difference.reshape(square_pixels, square_pixels)
 
 vmin = min(np.min(model_cov), np.min(sample_corr)); vmax = max(np.max(model_cov), np.max(sample_corr))
