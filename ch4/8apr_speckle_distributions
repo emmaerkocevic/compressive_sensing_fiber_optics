@@ -70,7 +70,7 @@ sample_covs = {name: np.cov(data, rowvar=False) for name, data in distributions.
 diff_matrices = {}
 for name, sample_cov in sample_covs.items():
     # diff = np.linalg.norm(cov - sample_cov, axis=1) / np.linalg.norm(cov, axis=1)
-    diff = np.linalg.norm(cov - sample_cov, axis=1)
+    diff = np.linalg.norm(cov - sample_cov, axis=1) / n
     diff_2d = diff.reshape(n, n)
     diff_matrices[name] = diff_2d
 
