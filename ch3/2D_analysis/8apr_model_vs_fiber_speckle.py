@@ -60,7 +60,8 @@ def estimate_L(n, sample_corr):
     result = opt.minimize(loss_function, L0, args=(n, sample_corr), bounds=[(0.1, 10)])
     L_opt = result.x[0]
 
-    residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro') / np.linalg.norm(model_covariance(n, L_opt), 'fro')
+    # residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro') / np.linalg.norm(model_covariance(n, L_opt), 'fro')
+    residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro')
 
     return L_opt, residual
 
@@ -87,14 +88,15 @@ number_of_modes = modes.number
 mode_profiles = modes.getModeMatrix(npola=1).reshape((npoints, npoints, number_of_modes))
 
 # compute sample correlation matrix, find L_opt, and compute model covariance matrix
-n_realizations = 10
+n_realizations = 10000
 sample_corr = sample_correlation(n_realizations, number_of_modes, mode_profiles, npoints, square_pixels)
 L_opt, residual = estimate_L(square_pixels, sample_corr)
 print(f"Optimal L: {L_opt:.2f}"); print(f"Difference: {residual:.2f}")
 model_cov = model_covariance(square_pixels, L_opt)
 
 # calculate the difference between the model and sample correlations for each pixel
-difference = np.linalg.norm(model_cov - sample_corr, axis=1) / np.linalg.norm(model_cov, axis=1)
+# difference = np.linalg.norm(model_cov - sample_corr, axis=1) / np.linalg.norm(model_cov, axis=1)
+difference = np.linalg.norm(model_cov - sample_corr, axis=1)
 difference_2d = difference.reshape(square_pixels, square_pixels)
 
 vmin = min(np.min(model_cov), np.min(sample_corr)); vmax = max(np.max(model_cov), np.max(sample_corr))
