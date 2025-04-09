@@ -49,7 +49,7 @@ cov_sqrt = np.linalg.cholesky(cov_stable)
 
 # generate speckle patterns
 np.random.seed(0)
-m = 10  # number of realizations
+m = 10000  # number of realizations
 baseline_speckles = np.random.randn(m, n * n)  # N(0,I)
 smoothed_speckles = baseline_speckles @ cov_sqrt.T if L > 0 else baseline_speckles  # N(0,Sigma)
 u_mat = stats.norm.cdf(smoothed_speckles)  # standard uniform
@@ -69,7 +69,8 @@ sample_covs = {name: np.cov(data, rowvar=False) for name, data in distributions.
 # compute the pixel-wise differences for all sample covariances
 diff_matrices = {}
 for name, sample_cov in sample_covs.items():
-    diff = np.linalg.norm(cov - sample_cov, axis=1) / np.linalg.norm(cov, axis=1)
+    # diff = np.linalg.norm(cov - sample_cov, axis=1) / np.linalg.norm(cov, axis=1)
+    diff = np.linalg.norm(cov - sample_cov, axis=1)
     diff_2d = diff.reshape(n, n)
     diff_matrices[name] = diff_2d
 
@@ -80,7 +81,7 @@ cov_vmax = max(np.max(mat) for mat in sample_covs.values())
 diff_vmin = min(np.min(mat) for mat in diff_matrices.values())
 diff_vmax = max(np.max(mat) for mat in diff_matrices.values())
 
-fig, axes = plt.subplots(2, len(sample_covs), figsize=(4 * len(sample_covs), 15))
+fig, axes = plt.subplots(2, len(sample_covs), figsize=(4 * len(sample_covs), 8))
 
 # sample covariance matrices
 for ax, (name, sample_cov) in zip(axes[0], sample_covs.items()):
@@ -96,8 +97,8 @@ for ax, (name, diff_2d) in zip(axes[1], diff_matrices.items()):
     ax.set_yticks([0, 20, 40, 60, 80])
 
 plt.tight_layout(rect=[0, 0, 0.95, 1])
-cbar_ax_cov = fig.add_axes([0.96, 0.56, 0.015, 0.3])  # [left, bottom, width, height]
-cbar_ax_diff = fig.add_axes([0.96, 0.14, 0.015, 0.3])
+cbar_ax_cov = fig.add_axes([0.96, 0.55, 0.015, 0.38])  # [left, bottom, width, height]
+cbar_ax_diff = fig.add_axes([0.96, 0.07, 0.015, 0.38])
 
 fig.colorbar(im_cov, cax=cbar_ax_cov)
 fig.colorbar(im_diff, cax=cbar_ax_diff)
