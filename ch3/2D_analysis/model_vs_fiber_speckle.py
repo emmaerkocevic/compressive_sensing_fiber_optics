@@ -3,73 +3,82 @@ import matplotlib.pyplot as plt
 import pyMMF
 import scipy.optimize as opt
 
-# simulates fiber speckle
+
 def speckle_field(number_of_modes, mode_profiles, npoints, square_pixels):
+
+    # circular field
     E_out = np.zeros((npoints, npoints, number_of_modes), dtype=complex)
     for k in range(number_of_modes):
-        A = np.random.uniform(0, 1)  # random amplitude in [0, 1]
-        phi = np.random.uniform(-np.pi, np.pi)  # random phase in [-π, π]
+        A = np.random.uniform(0, 1)  # random amplitude
+        phi = np.random.uniform(-np.pi, np.pi)  # random phase
         E_out[:, :, k] = A * np.exp(1j * phi) * mode_profiles[:, :, k]
-    E_out = np.sum(E_out, axis=2).astype(complex)  # sum over modes
+    E_out = np.sum(E_out, axis=2).astype(complex)
     intensity = np.abs(E_out) ** 2
-    
-    # crop to square region
+
+    # cropped square field
     center = npoints // 2
     x_min, x_max = center - square_pixels // 2, center + square_pixels // 2
     y_min, y_max = center - square_pixels // 2, center + square_pixels // 2
     E_out_cropped = E_out[y_min:y_max, x_min:x_max]
     intensity_cropped = np.abs(E_out_cropped) ** 2
-    
+
     return intensity, intensity_cropped
 
-# sample correlation matrix
-def sample_corr(n_realizations, number_of_modes, mode_profiles, npoints, square_pixels):
+
+def sample_correlation(n_realizations, number_of_modes, mode_profiles, npoints, square_pixels):
     intensity_flat = np.zeros((n_realizations, square_pixels * square_pixels))
+
     for i in range(n_realizations):
         intensity_cropped = speckle_field(number_of_modes, mode_profiles, npoints, square_pixels)[1]
         intensity_flat[i] = intensity_cropped.flatten()
-    corr_mat = np.corrcoef(intensity_flat, rowvar=False)
-    return corr_mat
 
-# model covariance matrix
-def cov_2d(n, L):
+    sample_corr = np.corrcoef(intensity_flat, rowvar=False)
+
+    return sample_corr
+
+
+def model_covariance(n, L):
     x = np.arange(n)
     y = np.arange(n)
     xx, yy = np.meshgrid(x, y)  # coordinate grids
     coords = np.column_stack((xx.ravel(), yy.ravel()))  # flatten coordinates
     diff = coords[:, None, :] - coords[None, :, :]  # pairwise coordinate differences
     dist_sq = np.sum(diff ** 2, axis=-1)  # squared Euclidean distances
-    cov = np.exp(-dist_sq / (L ** 2))
-    return cov
+    model_cov = np.exp(-dist_sq / (L ** 2))
+    return model_cov
 
-# finds L for which cov_2d best resembles sample_corr
-def optimal_L(n, corr_mat):
-    
-    def loss_function(L, n, corr_mat):
-        cov_model = cov_2d(n, L)  # Compute theoretical covariance
-        return np.linalg.norm(corr_mat - cov_model, 'fro')  # Frobenius norm
-    
-    # optimize L
-    initial_L = 1.0
-    result = opt.minimize(loss_function, initial_L, args=(n, corr_mat), bounds=[(0.1, 10)])
-    optimal_L_cts = result.x[0]  # optimal continuous L
 
-    # find closest discrete L = sqrt(a^2 + b^2)
-    max_a_b = int(np.ceil(optimal_L_cts)) + 1  # set reasonable search limit
-    L_values = sorted({np.sqrt(a**2 + b**2) for a in range(1, max_a_b) for b in range(1, max_a_b)})  # generate valid L values
-    optimal_L = min(L_values, key=lambda x: abs(x - optimal_L_cts))  # find closest discrete L
-    
-    difference = np.linalg.norm(corr_mat - cov_2d(n, optimal_L_cts), 'fro') / np.linalg.norm(corr_mat, 'fro')
+# find the value of L for which the model covariance best resembles the sample correlation
+def estimate_L(n, sample_corr):
 
-    return optimal_L, difference
+    def loss_function(L, n, sample_cov):
+        model_cov = model_covariance(n, L)
+        return np.linalg.norm(sample_corr - model_cov, 'fro')  # minimize the Frobenius norm
+
+    # estimate L
+    L0 = 1.0
+    result = opt.minimize(loss_function, L0, args=(n, sample_corr), bounds=[(0.1, 10)])
+    L_opt = result.x[0]
+    
+    
+    # find closest L = sqrt(Lx^2 + Ly^2)
+    max_a_b = int(np.ceil(L_opt)) + 1  # search limit
+    L_values = sorted({np.sqrt(a**2 + b**2) for a in range(1, max_a_b) for b in range(1, max_a_b)})
+    L_opt = min(L_values, key=lambda x: abs(x - L_opt))
+
+    # residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro') / np.linalg.norm(model_covariance(n, L_opt), 'fro')
+    residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro')
+
+    return L_opt, residual
+
 
 # fiber parameters
 radius = 20  # core radius
 wl = 1  # wavelength in vacuum
 NA = 0.22  # numerical aperture
-areaSize = 2 * radius  # area size 
-square_pixels = 80 # mask size in pixels
-npoints = int((square_pixels * areaSize) / (2 * radius / np.sqrt(2)))  # orignal image resolution
+areaSize = 2 * radius  # area size
+square_pixels = 80  # size of the square mask in pixels
+npoints = int((square_pixels * areaSize) / (2 * radius / np.sqrt(2)))  # image resolution for the circular field
 n1 = 1.46  # core refractive index
 
 # create and configure fiber object
@@ -84,70 +93,99 @@ modes = solver.solve(solver='SI')
 number_of_modes = modes.number
 mode_profiles = modes.getModeMatrix(npola=1).reshape((npoints, npoints, number_of_modes))
 
-example_intensity = speckle_field(number_of_modes, mode_profiles, npoints, square_pixels)[0]
+# compute sample correlation matrix, find L_opt, and compute model covariance matrix
+n_realizations = 10000
+sample_corr = sample_correlation(n_realizations, number_of_modes, mode_profiles, npoints, square_pixels)
+L_opt, residual = estimate_L(square_pixels, sample_corr)
+print(f"Optimal L: {L_opt:.2f}"); print(f"Difference: {residual:.2f}")
+model_cov = model_covariance(square_pixels, L_opt)
 
-corr_mat = sample_corr(1000, number_of_modes, mode_profiles, npoints, square_pixels)
+# calculate the difference between the model and sample correlations for each pixel
+# difference = np.linalg.norm(model_cov - sample_corr, axis=1) / np.linalg.norm(model_cov, axis=1)
+difference = np.linalg.norm(model_cov - sample_corr, axis=1) / square_pixels
+difference_2d = difference.reshape(square_pixels, square_pixels)
 
-optimal_L, difference = optimal_L(square_pixels, corr_mat)
-print(f"Optimal L: {optimal_L:.2f}")
-print(f"Difference: {difference:.2f}")
+vmin = min(np.min(model_cov), np.min(sample_corr)); vmax = max(np.max(model_cov), np.max(sample_corr))
 
-cov_model = cov_2d(square_pixels, optimal_L)  # model covariance based on optimal L
-cov_stable = cov_model + np.eye(square_pixels * square_pixels) * 0.0001
-cov_sqrt = np.linalg.cholesky(cov_stable)
+# plot heatmap of the model covariance, sample correlation, and pixel-wise differences
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
-# model speckle
-np.random.seed(0)
-baseline = np.random.randn(square_pixels * square_pixels)  # N(0, I)
-model_speckle_flat = baseline @ cov_sqrt.T  # N(0, Sigma)
-model_speckle = model_speckle_flat.reshape(square_pixels, square_pixels)
+# model covariance
+im1 = axes[0].imshow(model_cov, cmap='hot', vmin=vmin, vmax=vmax)
+axes[0].set_title("Model covariance matrix")
+fig.colorbar(im1, ax=axes[0], fraction=0.046, pad=0.04)
+
+# sample correlation
+im2 = axes[1].imshow(sample_corr, cmap='hot', vmin=vmin, vmax=vmax)
+axes[1].set_title("Sample correlation matrix")
+fig.colorbar(im2, ax=axes[1], fraction=0.046, pad=0.04)
+
+# pixel-wise differences
+im3 = axes[2].imshow(difference_2d, cmap='Greys')
+axes[2].set_title('Difference per pixel')
+axes[2].set_xticks([0, 20, 40, 60, 80])
+axes[2].set_yticks([0, 20, 40, 60, 80])
+fig.colorbar(im3, ax=axes[2], fraction=0.046, pad=0.04)
+
+plt.tight_layout()
+plt.show()
+
 
 # compute center index in the speckle pattern from flattened representation
 center_index = (square_pixels // 2) * square_pixels + square_pixels // 2
 
 # extract the middle row from the model and sample correlation matrices
-middle_row_model = cov_model[center_index, :].reshape(square_pixels, square_pixels)[square_pixels // 2, :]
-middle_row_sample = corr_mat[center_index, :].reshape(square_pixels, square_pixels)[square_pixels // 2, :]
+center_index_model = model_cov[center_index, :].reshape(square_pixels, square_pixels)
+center_index_sample = sample_corr[center_index, :].reshape(square_pixels, square_pixels)
 
-# plot comparison
-fig, ax = plt.subplots(figsize=(8, 5))
-ax.plot(middle_row_model, label="model", color='red')
-ax.plot(middle_row_sample, label="fiber", color='blue')
-ax.set_xlabel("Pixel number")
-ax.set_ylabel("Correlation")
-ax.legend()
+vmin = min(np.min(center_index_model), np.min(center_index_sample)); vmax = max(np.max(center_index_model), np.max(center_index_sample))
+
+# plot heatmap
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+# model
+im1 = axes[0].imshow(center_index_model, cmap='hot', vmin=vmin, vmax=vmax)
+axes[0].set_title("Model")
+fig.colorbar(im1, ax=axes[0], fraction=0.046, pad=0.04)
+
+# fiber
+im2 = axes[1].imshow(center_index_sample, cmap='hot', vmin=vmin, vmax=vmax)
+axes[1].set_title("Fiber")
+fig.colorbar(im2, ax=axes[1], fraction=0.046, pad=0.04)
+
+plt.tight_layout()
 plt.show()
 
-diff = np.linalg.norm(cov_model - corr_mat, axis=1) / np.linalg.norm(cov_model, axis=1)
-diff_2d = diff.reshape(square_pixels,square_pixels)
 
-# plot NMSE of correlations between model and fiber speckle
-plt.figure()
-im = plt.imshow(diff_2d, cmap='hot')
-plt.title(r'$||\mathbf{\tilde\Sigma}_{i\cdot}-\mathbf{\bar{\Sigma}}_{i\cdot}||_2\enspace/\enspace||\mathbf{\tilde\Sigma}_{i\cdot}||_2$')
-plt.xticks([0, 20, 40, 60, 80])
-plt.yticks([0, 20, 40, 60, 80])
-plt.colorbar(im)
-plt.show()
+cov_stable = model_cov + np.eye(square_pixels * square_pixels) * 0.0001
+cov_sqrt = np.linalg.cholesky(cov_stable)
 
-# Create a figure with 1 row and 2 columns using GridSpec for layout
+# model speckle
+np.random.seed(0)
+baseline = np.random.randn(square_pixels * square_pixels)  # N(0,I)
+model_speckle = baseline @ cov_sqrt.T  # N(0,Sigma)
+model_speckle_2d = model_speckle.reshape(square_pixels, square_pixels)
+
+example_intensity = speckle_field(number_of_modes, mode_profiles, npoints, square_pixels)[0]
+
+# plot example of model and fiber speckle
 fig = plt.figure(figsize=(12, 5))
+gs = fig.add_gridspec(1, 2, width_ratios=[1, 2])  # adjust width ratios for different subplot sizes
 
-# Define a GridSpec layout with 1 row and 2 columns
-gs = fig.add_gridspec(1, 2, width_ratios=[1, 2])  # Adjust width ratios for different subplot sizes
-
-# first subplot (smaller size)
-ax0 = fig.add_subplot(gs[0])  # Smaller subplot
-im0 = ax0.imshow(model_speckle, extent=[-square_pixels // 2, square_pixels // 2, -square_pixels // 2, square_pixels // 2])
+# model speckle
+ax0 = fig.add_subplot(gs[0])  # smaller subplot
+im0 = ax0.imshow(model_speckle_2d,
+                 extent=[-square_pixels // 2, square_pixels // 2, -square_pixels // 2, square_pixels // 2])
 ax0.set_title("Model speckle")
-plt.colorbar(im0, ax=ax0, fraction=0.046, pad=0.04)  # Add colorbar
+plt.colorbar(im0, ax=ax0, fraction=0.046, pad=0.04)
 
-# second subplot (normal size)
-ax1 = fig.add_subplot(gs[1])  # Larger subplot
+# circular fiber speckle overlaid with square rectangle
+ax1 = fig.add_subplot(gs[1])  # larger subplot
 im1 = ax1.imshow(example_intensity, extent=[-npoints // 2, npoints // 2, -npoints // 2, npoints // 2])
 ax1.set_title("Fiber speckle")
-plt.colorbar(im1, ax=ax1, fraction=0.046, pad=0.04)  # Add colorbar
-rect = plt.Rectangle((-square_pixels // 2, -square_pixels // 2), square_pixels, square_pixels, linewidth=2, edgecolor='red', facecolor='none')
+plt.colorbar(im1, ax=ax1, fraction=0.046, pad=0.04)
+rect = plt.Rectangle((-square_pixels // 2, -square_pixels // 2), square_pixels, square_pixels,
+                     linewidth=2,  edgecolor='red', facecolor='none')
 ax1.add_patch(rect)
 
 plt.tight_layout()
