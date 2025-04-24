@@ -2,6 +2,9 @@ import numpy as np
 from joblib import Parallel, delayed
 import cvxpy as cp
 
+'''numerical experiment for the effect of 1D smoothing in the measurement matrix across varying measurement numbers
+(Fig. 3.4 in thesis), including the option to constrain signal classes (Fig. 3.7 and Fig. 3.9)'''
+
 # reconstructs a single s-sparse vector with CVX
 def reconstruct(A, N, s, L):
     # ground truth    
@@ -48,7 +51,6 @@ def reconstruct(A, N, s, L):
     error = np.linalg.norm(x.value - xt, ord=2) / np.linalg.norm(xt, ord=2)
 
     return error
-
 
 # computes probabilities of success for different number of measurements
 def compute_results(n_measurements, N, s, L, n_runs):
