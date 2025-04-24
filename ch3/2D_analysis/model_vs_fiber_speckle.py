@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pyMMF
 import scipy.optimize as opt
 
+'''simulates speckle patterns with pyMMF, computes sample correlation matrix, and estimates value of smoothing length parameter L (Fig. 3.11 and Fig. 3.12 in thesis)'''
 
 def speckle_field(number_of_modes, mode_profiles, npoints, square_pixels):
 
@@ -24,7 +25,6 @@ def speckle_field(number_of_modes, mode_profiles, npoints, square_pixels):
 
     return intensity, intensity_cropped
 
-
 def sample_correlation(n_realizations, number_of_modes, mode_profiles, npoints, square_pixels):
     intensity_flat = np.zeros((n_realizations, square_pixels * square_pixels))
 
@@ -36,7 +36,6 @@ def sample_correlation(n_realizations, number_of_modes, mode_profiles, npoints, 
 
     return sample_corr
 
-
 def model_covariance(n, L):
     x = np.arange(n)
     y = np.arange(n)
@@ -46,7 +45,6 @@ def model_covariance(n, L):
     dist_sq = np.sum(diff ** 2, axis=-1)  # squared Euclidean distances
     model_cov = np.exp(-dist_sq / (L ** 2))
     return model_cov
-
 
 # find the value of L for which the model covariance best resembles the sample correlation
 def estimate_L(n, sample_corr):
@@ -60,11 +58,9 @@ def estimate_L(n, sample_corr):
     result = opt.minimize(loss_function, L0, args=(n, sample_corr), bounds=[(0.1, 10)])
     L_opt = result.x[0]
 
-    # residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro') / np.linalg.norm(model_covariance(n, L_opt), 'fro')
     residual = np.linalg.norm(sample_corr - model_covariance(n, L_opt), 'fro')
 
     return L_opt, residual
-
 
 # fiber parameters
 radius = 20  # core radius
@@ -95,7 +91,6 @@ print(f"Optimal L: {L_opt:.2f}"); print(f"Difference: {residual:.2f}")
 model_cov = model_covariance(square_pixels, L_opt)
 
 # calculate the difference between the model and sample correlations for each pixel
-# difference = np.linalg.norm(model_cov - sample_corr, axis=1) / np.linalg.norm(model_cov, axis=1)
 difference = np.linalg.norm(model_cov - sample_corr, axis=1) / square_pixels
 difference_2d = difference.reshape(square_pixels, square_pixels)
 
@@ -124,12 +119,10 @@ fig.colorbar(im3, ax=axes[2], fraction=0.046, pad=0.04)
 plt.tight_layout()
 plt.show()
 
-
-cov_stable = model_cov + np.eye(square_pixels * square_pixels) * 0.0001
-cov_sqrt = np.linalg.cholesky(cov_stable)
-
 # model speckle
 np.random.seed(0)
+cov_stable = model_cov + np.eye(square_pixels * square_pixels) * 0.0001
+cov_sqrt = np.linalg.cholesky(cov_stable)
 baseline = np.random.randn(square_pixels * square_pixels)  # N(0,I)
 model_speckle = baseline @ cov_sqrt.T  # N(0,Sigma)
 model_speckle_2d = model_speckle.reshape(square_pixels, square_pixels)
