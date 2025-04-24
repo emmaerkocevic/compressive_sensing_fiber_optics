@@ -3,6 +3,9 @@ from joblib import Parallel, delayed
 from collections import defaultdict
 import cvxpy as cp
 
+'''numerical experiment for the effect of 1D smoothing in the measurement matrix, simultanously varying 
+measurement numbers and sparsity levels (Fig. 3.6 in thesis)'''
+
 # reconstructs a single s-sparse vector with CVX
 def reconstruct(A, xt):
     
@@ -62,7 +65,6 @@ def compute_results(n_measurements, N, L, n_runs):
     )
 
     return results
-
 
 np.random.seed(0)
 
