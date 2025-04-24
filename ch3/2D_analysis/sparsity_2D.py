@@ -14,8 +14,8 @@ def cov_2d(n, L):
     coords = np.column_stack((xx.ravel(), yy.ravel()))
 
     # compute pairwise squared Euclidean distances using broadcasting
-    diff = coords[:, None, :] - coords[None, :, :]  # shape (n^2, n^2, 2)
-    dist_sq = np.sum(diff ** 2, axis=-1)  # sum over x and y differences -> shape (n^2, n^2)
+    diff = coords[:, None, :] - coords[None, :, :]
+    dist_sq = np.sum(diff ** 2, axis=-1)
 
     cov = np.exp(-dist_sq / (L ** 2))
 
@@ -39,7 +39,8 @@ def reconstruct(A, n, s, L):
     error = np.linalg.norm(x.value - xt, ord=2) / np.linalg.norm(xt, ord=2)
 
     return error
-    
+
+# ...
 def compute_results(Aop, n, sparsity_levels, n_runs, L):
     p_success = []
 
@@ -60,7 +61,7 @@ sparsity_levels = range(1, s)
 lengths = [0, 1, np.sqrt(2), 2, np.sqrt(5), 2*np.sqrt(2), 3, np.sqrt(10), np.sqrt(13)]  # 0 represents random Gaussian
 n_runs = 100
 
-# main loop for processing
+# main loop
 p_success_dict = {}
 baseline_A = np.random.randn(m, n*n)
 for L in lengths:
@@ -75,62 +76,3 @@ for L in lengths:
 
 # save results
 np.savez('sparsity_2D.npz', lengths=lengths, sparsity_levels=sparsity_levels, p_success_dict=p_success_dict)
-
-
-### Plot results ###
-
-import matplotlib.pyplot as plt
-
-plt.rcParams.update({
-    'axes.labelsize': 12, 
-    'axes.titlesize': 14,  
-    'xtick.labelsize': 12,  
-    'ytick.labelsize': 12,  
-    'legend.fontsize': 12,  
-    'font.size': 12  
-})
-
-lengths = [0, 1, np.sqrt(2), 2, np.sqrt(5), 2 * np.sqrt(2), 3, np.sqrt(10), np.sqrt(13)]
-
-color_map = {
-    0: 'blue',            
-    1: 'orange',          
-    np.sqrt(2): 'brown',  
-    2: 'dodgerblue',           
-    np.sqrt(5): 'green',   
-    2 * np.sqrt(2): 'limegreen',  
-    3: 'gold',             
-    np.sqrt(10): 'purple',      
-    np.sqrt(13): 'red' 
-}
-
-sqrt_labels = {
-    np.sqrt(2): r'\sqrt{2}',
-    np.sqrt(5): r'\sqrt{5}',
-    2 * np.sqrt(2): r'2\sqrt{2}',
-    np.sqrt(10): r'\sqrt{10}',
-    np.sqrt(13): r'\sqrt{13}'
-}
-
-# format labels correctly
-def format_label(L):
-    if L in sqrt_labels:
-        return rf"$L = {sqrt_labels[L]}$"  
-    else:
-        return rf"$L = {int(L)}$"
-        
-# load sparsity results
-data = np.load('sparsity_results_2D_cvx.npz', allow_pickle=True)
-sparsity_levels = data['sparsity_levels']
-p_success_dict = data['p_success_dict'].item()
-
-# plot probability vs. sparsity Level
-plt.figure()
-for key in lengths:
-    plt.plot(sparsity_levels, np.ravel(p_success_dict[key]), label=format_label(key), color=color_map[key])
-plt.legend()
-plt.xlabel('$s$')
-plt.ylabel('Probability of successful reconstruction')
-plt.title(r'$m=200$, $n\times n=20\times20$')
-
-plt.show()
