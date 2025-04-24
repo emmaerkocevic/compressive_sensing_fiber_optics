@@ -68,7 +68,7 @@ lengths = [1]
 n_runs = 100
 distributions = ['mean-zero normal', 'exponential', 'uniform', 'triangular', 'shifted normal', 'bimodal']
 
-# main loop: compute results
+# main loop: compute and store results
 results = {}
 for L in lengths:
     results[L] = {}
@@ -113,33 +113,3 @@ np.savez('sparsity_results_nonneg.npz',
          lengths=lengths,
          distributions=distributions,
          results=results)
-
-### Plot results ###
-import matplotlib.pyplot as plt
-
-plt.rcParams.update({
-    'axes.labelsize': 12,
-    'axes.titlesize': 14,  
-    'xtick.labelsize': 12,  
-    'ytick.labelsize': 12,  
-    'legend.fontsize': 12,  
-    'font.size': 12 
-})
-
-colors = ['black', 'blue', 'orange', 'green', 'red', 'purple']
-
-# Load results
-data = np.load('sparsity_results_nonneg_3apr.npz', allow_pickle=True)
-sparsity_levels = data['sparsity_levels']
-distributions = data['distributions']
-results = data['results'].item()  # Convert to dictionary
-
-# Plot results
-plt.figure()
-for i, dist in enumerate(distributions):
-    plt.plot(sparsity_levels, results[1][dist], label=dist, color=colors[i])
-plt.xlabel('$s$')
-plt.ylabel('Probability of successful reconstruction')
-plt.title(r'$m=200$, $n\times n=20\times 20$, $L=1$')
-plt.legend()
-plt.show()
