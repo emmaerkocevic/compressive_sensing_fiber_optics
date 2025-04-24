@@ -37,7 +37,7 @@ plt.title(r'$n\times n=20\times 20$, $s=40$, $L=1$')
 plt.legend()
 plt.show()
 
-plot sparsity results
+# plot sparsity results
 plt.figure()
 for i, dist in enumerate(distributions):
     plt.plot(sparsity_levels, results[1][dist], label=dist, color=colors[i])
