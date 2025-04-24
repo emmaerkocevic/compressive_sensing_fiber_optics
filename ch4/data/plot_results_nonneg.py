@@ -15,14 +15,14 @@ plt.rcParams.update({
 colors = ['black', 'blue', 'orange', 'green', 'red', 'purple']
 
 # load measurement results
-data = np.load('measurements_results_nonneg.npz', allow_pickle=True)
+data = np.load('measurements_nonneg.npz', allow_pickle=True)
 n_measurements = data['n_measurements']
 lengths = data['lengths']
 distributions = data['distributions']
 results = data['results'].item()  # convert to dictionary
 
 # load sparsity results
-data = np.load('sparsity_results_nonneg_3apr.npz', allow_pickle=True)
+data = np.load('sparsity_nonneg.npz', allow_pickle=True)
 sparsity_levels = data['sparsity_levels']
 distributions = data['distributions']
 results = data['results'].item()  # Convert to dictionary
