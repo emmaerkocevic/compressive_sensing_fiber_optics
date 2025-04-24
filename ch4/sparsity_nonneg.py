@@ -5,6 +5,8 @@ import scipy.stats as stats
 from scipy.stats import expon, uniform, triang, norm
 from scipy.interpolate import interp1d
 
+'''numerical experiment for different intensity distributions across varying sparsity levels (Fig. 4.5 in thesis)'''
+
 # bimodal distribution functions
 def bimodal_pdf(x, loc1, loc2, scale):
     return 0.5 * norm.pdf(x, loc1, scale) + 0.5 * norm.pdf(x, loc2, scale)
@@ -28,7 +30,6 @@ def cov_2d(n, L):
     cov = np.exp(-dist_sq / (L ** 2))
     return cov
 
-
 # reconstructs a single s-sparse vector using CVX
 def reconstruct(A, n, s, L):
     xt = np.zeros(n * n)
@@ -46,7 +47,6 @@ def reconstruct(A, n, s, L):
     error = np.linalg.norm(x.value - xt) / np.linalg.norm(xt)
     return error
 
-
 # computes probabilities of success for different sparsity levels
 def compute_results(A, n, sparsity_levels, n_runs, L):
     p_success = []
@@ -56,10 +56,9 @@ def compute_results(A, n, sparsity_levels, n_runs, L):
         p_success.append(np.mean(errors <= 0.05))  # probability of successful reconstruction
     return p_success
 
-
 np.random.seed(0)
 
-# Parameters
+# parameters
 m = 200
 n = 20
 s = 200
@@ -69,25 +68,24 @@ lengths = [1]
 n_runs = 100
 distributions = ['mean-zero normal', 'exponential', 'uniform', 'triangular', 'shifted normal', 'bimodal']
 
-# Dictionary to store results
+# main loop: compute results
 results = {}
-
 for L in lengths:
     results[L] = {}
     
-    # Generate covariance matrix if L > 0
+    # generate covariance matrix if L > 0
     if L > 0:
         cov = cov_2d(n, L)
         cov_stable = cov + np.eye(n * n) * 0.0001
         cov_sqrt = np.linalg.cholesky(cov_stable)
     else:
-        cov_sqrt = None  # No smoothing for L=0
+        cov_sqrt = None  # no smoothing
 
     for dist in distributions:
-        # Generate measurement matrix A based on distribution type
+        # generate measurement matrix based on distribution
         baseline_A = np.random.randn(m, n * n)  # N(0,I)
         smoothed_A = baseline_A @ cov_sqrt.T if L > 0 else baseline_A
-        u = stats.norm.cdf(smoothed_A)  # Convert to Unif[0,1]
+        u = stats.norm.cdf(smoothed_A)  # Unif[0,1]
 
         if dist == 'mean-zero normal':
             A = smoothed_A
@@ -99,7 +97,6 @@ for L in lengths:
             A = stats.triang.ppf(u, c=1, loc=0, scale=np.sqrt(18))
         elif dist == 'shifted normal':
             A = stats.norm.ppf(u, loc=3, scale=1)
-            # A[A < 0] = np.random.normal(loc=3, scale=1, size=np.sum(A < 0))
         elif dist == 'bimodal':
             # parameters for bimodal distribution
             d = (np.sqrt(2) + 2) / 2
@@ -107,11 +104,11 @@ for L in lengths:
             mu1, mu2, sigma = 1.5, 1.5 + d, c * d / 2
             A = bimodal_ppf(u, mu1, mu2, sigma)
 
-        # Compute success probabilities
+        # compute success probabilities
         results[L][dist] = compute_results(A, n, sparsity_levels, n_runs, L)
 
-# Save all results in a single file
-np.savez('sparsity_results_nonneg_3apr.npz',
+# save results
+np.savez('sparsity_results_nonneg.npz',
          sparsity_levels=sparsity_levels,
          lengths=lengths,
          distributions=distributions,
