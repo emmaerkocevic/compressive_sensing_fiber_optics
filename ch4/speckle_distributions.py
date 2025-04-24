@@ -4,6 +4,8 @@ import scipy.stats as stats
 from scipy.stats import expon, uniform, triang, norm
 from scipy.interpolate import interp1d
 
+'''creates patterns with different intensity distributions, their sample covariance matrices, and pixel-wise differences
+(Fig. 4.3 in thesis)'''
 
 plt.rcParams.update({
     'axes.labelsize': 12,
@@ -13,7 +15,6 @@ plt.rcParams.update({
     'legend.fontsize': 12,
     'font.size': 12
 })
-
 
 # bimodal distribution and parameters
 def bimodal_pdf(x, loc1, loc2, scale):
@@ -31,8 +32,7 @@ d = (np.sqrt(2) + 2) / 2  # distance between peaks
 c = np.sqrt((4 - d ** 2) / d ** 2)
 mu1, mu2, sigma = 1.5, 1.5 + d, c * d / 2  # mean of peak 1, mean of peak 2 and standard deviation
 
-
-# covariance matrix
+# model covariance matrix
 def cov_2d(n, L):
     x = np.arange(n)
     xx, yy = np.meshgrid(x, x)
@@ -45,7 +45,6 @@ L = np.sqrt(13)  # smoothing length
 cov = cov_2d(n, L)
 cov_stable = cov + np.eye(n * n) * 0.0001
 cov_sqrt = np.linalg.cholesky(cov_stable)
-
 
 # generate speckle patterns
 np.random.seed(0)
@@ -97,14 +96,13 @@ for ax, (name, diff_2d) in zip(axes[1], diff_matrices.items()):
     ax.set_yticks([0, 20, 40, 60, 80])
 
 plt.tight_layout(rect=[0, 0, 0.95, 1])
-cbar_ax_cov = fig.add_axes([0.96, 0.55, 0.015, 0.38])  # [left, bottom, width, height]
+cbar_ax_cov = fig.add_axes([0.96, 0.55, 0.015, 0.38])
 cbar_ax_diff = fig.add_axes([0.96, 0.07, 0.015, 0.38])
 
 fig.colorbar(im_cov, cax=cbar_ax_cov)
 fig.colorbar(im_diff, cax=cbar_ax_diff)
 
 plt.show()
-
 
 # show an example pattern for each distribution, along with its histogram of intensities
 example_images = {name: data[0, :].reshape((n, n)) for name, data in distributions.items()}
