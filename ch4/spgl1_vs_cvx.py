@@ -5,6 +5,7 @@ import pylops
 from pylops.optimization.sparsity import spgl1 as spgl1_pylops
 import cvxpy as cp
 
+'''comparison of reconstructions with spgl1 versus cvxpy (Fig. 4.6 in thesis)'''
 
 def reconstruct_spgl1(Aop, n, s, noise):
     xt = np.zeros(n)
@@ -16,7 +17,6 @@ def reconstruct_spgl1(Aop, n, s, noise):
     xinv = spgl1_pylops(A=Aop, b=y, sigma=sigma)[0]  # solve with SPGL1
     error = np.linalg.norm(xinv - xt, ord=2) / np.linalg.norm(xt, ord=2)
     return error
-
 
 def reconstruct_cvx(A, n, s, noise):
     xt = np.zeros(n)
@@ -33,9 +33,8 @@ def reconstruct_cvx(A, n, s, noise):
     error = np.linalg.norm(x.value - xt, ord=2) / np.linalg.norm(xt, ord=2)
     return error
 
-
 def compute_results(n_measurements, n, s, n_runs, mean):
-    nmse_spgl1, nmse_cvx = [], []  # normalized mean square error
+    nmse_spgl1, nmse_cvx = [], []  # normalized mean-square error
     
     for m in n_measurements:
         A = np.random.normal(loc=mean, scale=1, size=(m, n))  # measurement matrix with N(0,1) or N(20,1) i.i.d. entries
