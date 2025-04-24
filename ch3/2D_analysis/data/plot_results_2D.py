@@ -41,7 +41,7 @@ def format_label(L):
         return rf"$L = {int(L)}$"
         
 # load measurement results
-data = np.load('measurements_results_2D_cvx.npz', allow_pickle=True)
+data = np.load('measurements_2D.npz', allow_pickle=True)
 n_measurements = data['n_measurements']
 p_success_dict = data['p_success_dict'].item()
 
@@ -56,7 +56,7 @@ plt.title(r'$n\times n=20\times20$, $s=40$')
 plt.show()
         
 # load sparsity results
-data = np.load('sparsity_results_2D_cvx.npz', allow_pickle=True)
+data = np.load('sparsity_2D.npz', allow_pickle=True)
 sparsity_levels = data['sparsity_levels']
 p_success_dict = data['p_success_dict'].item()
 
