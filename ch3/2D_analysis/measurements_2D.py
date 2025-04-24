@@ -2,7 +2,7 @@ import numpy as np
 from joblib import Parallel, delayed
 import cvxpy as cp
 
-'''numerical experiment for the effect of 2D smoothed patterns constituting the measurement matrix's rows, 
+'''numerical experiment for the effect of 2D smoothed patterns constituting the measurement matrix's rows 
 for varying measurement numbers (Fig. 3.13 in thesis)'''
 
 # constructs n^2 x n^2 covariance matrix based on 2D RBF kernel
