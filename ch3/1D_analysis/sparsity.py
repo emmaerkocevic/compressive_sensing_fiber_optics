@@ -2,6 +2,9 @@ import numpy as np
 from joblib import Parallel, delayed
 import cvxpy as cp
 
+'''numerical experiment for the effect of 1D smoothing in the measurement matrix across varying sparsity levels
+(Fig. 3.5 in thesis), including the option to constrain signal classes (Fig. 3.8 and Fig. 3.10)'''
+
 # reconstructs a single s-sparse vector with CVX
 def reconstruct(A, N, s, L):
     # ground truth
