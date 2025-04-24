@@ -17,7 +17,7 @@ def cov_2d(n, L):
     coords = np.column_stack((xx.ravel(), yy.ravel()))
 
     # compute pairwise squared Euclidean distances using broadcasting
-    diff = coords[:, None, :] - coords[None, :, :]
+    diff = coords[:, None, :] - coords[None, :, :]  # shape (n^2, n^2, 2)
     dist_sq = np.sum(diff ** 2, axis=-1)
 
     cov = np.exp(-dist_sq / (L ** 2))
@@ -43,7 +43,7 @@ def reconstruct(A, n, s, L):
 
     return error
 
-# computes probabilities of success for varying sparsity levels
+# computes probabilities of success for different sparsity levels
 def compute_results(Aop, n, sparsity_levels, n_runs, L):
     p_success = []
 
