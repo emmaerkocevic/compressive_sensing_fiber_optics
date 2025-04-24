@@ -2,6 +2,9 @@ import numpy as np
 from joblib import Parallel, delayed
 import cvxpy as cp
 
+'''numerical experiment for the effect of 2D smoothed patterns constituting the measurement matrix's rows 
+for varying sparsity levels (Fig. 3.14 in thesis)'''
+
 # constructs n^2 x n^2 covariance matrix based on 2D RBF kernel
 def cov_2d(n, L):
 
@@ -40,7 +43,7 @@ def reconstruct(A, n, s, L):
 
     return error
 
-# ...
+# computes probabilities of success for varying sparsity levels
 def compute_results(Aop, n, sparsity_levels, n_runs, L):
     p_success = []
 
