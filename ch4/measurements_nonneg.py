@@ -109,7 +109,7 @@ for L in lengths:
         results[L][dist] = compute_results(n_measurements, n, s, L, n_runs, dist)
 
 # save results
-np.savez('measurement_results_nonneg.npz', 
+np.savez('measurements_nonneg.npz', 
          n_measurements=n_measurements, 
          lengths=lengths, 
          distributions=distributions, 
