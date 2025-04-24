@@ -7,6 +7,8 @@ import scipy.stats as stats
 from scipy.stats import norm
 from scipy.interpolate import interp1d
 
+'''numerical experiment for different intensity distributions across varying measurement numbers (Fig. 4.4 in thesis)'''
+
 # bimodal distribution functions
 def bimodal_pdf(x, loc1, loc2, scale):
     return 0.5 * norm.pdf(x, loc1, scale) + 0.5 * norm.pdf(x, loc2, scale)
@@ -55,7 +57,7 @@ def compute_results(n_measurements, n, s, L, n_runs, dist_type):
         cov_stable = cov + np.eye(n * n) * 0.0001
         cov_sqrt = np.linalg.cholesky(cov_stable)
     else:
-        cov_sqrt = None  # No smoothing for L=0
+        cov_sqrt = None  # no smoothing
 
     for m in n_measurements:
         baseline_A = np.random.randn(m, n * n)  # N(0,I)
@@ -89,7 +91,7 @@ def compute_results(n_measurements, n, s, L, n_runs, dist_type):
 
 np.random.seed(0)
 
-# Parameters
+# parameters
 m = 400
 n_measurements = range(10, m)
 # n_measurements = range(10, m, 20)
@@ -99,17 +101,15 @@ n_runs = 100
 lengths = [1]
 distributions = ['mean-zero normal', 'exponential', 'uniform', 'triangular', 'shifted normal', 'bimodal']
 
-# Dictionary to store results
+# main loop: compute and store results
 results = {}
-
-# Compute and store results
 for L in lengths:
     results[L] = {}
     for dist in distributions:
         results[L][dist] = compute_results(n_measurements, n, s, L, n_runs, dist)
 
-# Save all results in a single file
-np.savez('measurements_results_nonneg_3apr.npz', 
+# save results
+np.savez('measurement_results_nonneg.npz', 
          n_measurements=n_measurements, 
          lengths=lengths, 
          distributions=distributions, 
