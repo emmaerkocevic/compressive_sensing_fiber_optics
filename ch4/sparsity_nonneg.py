@@ -108,7 +108,7 @@ for L in lengths:
         results[L][dist] = compute_results(A, n, sparsity_levels, n_runs, L)
 
 # save results
-np.savez('sparsity_results_nonneg.npz',
+np.savez('sparsity_nonneg.npz',
          sparsity_levels=sparsity_levels,
          lengths=lengths,
          distributions=distributions,
