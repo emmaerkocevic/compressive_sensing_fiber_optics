@@ -52,7 +52,7 @@ def reconstruct(A, N, s, L):
     
     return error
     
-
+# computes probabilities of success for different sparsity levels
 def compute_results(A, N, sparsity_levels, n_runs, L):
     p_success = []
 
@@ -85,7 +85,7 @@ sparsity_levels = range(1, s)
 lengths = [0, 1, 2, 3, 4]  # 0 represents random Gaussian
 n_runs = 100
 
-# main loop for processing
+# main loop
 p_success_dict = {}
 for L in lengths:
     if L == 0:  # uncorrelated case
