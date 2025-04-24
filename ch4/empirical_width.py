@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-'''greedy approximation of the empirical width for varying measurement numbers and sparsity levels (Fig. 4.2 in thesis'''
+'''greedy approximation of the empirical width for varying measurement numbers and sparsity levels (Fig. 4.2 in thesis)'''
 
 plt.rcParams.update({
     'axes.labelsize': 12,
